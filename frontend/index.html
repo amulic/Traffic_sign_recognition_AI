@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Sign Recognition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-md text-center w-full max-w-md">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Traffic Sign Recognition</h1>
+        <form id="upload-form" class="space-y-4">
+            <label for="file" class="block text-gray-700 font-medium">Upload a Traffic Sign Image:</label>
+            <input type="file" id="file" name="file" accept="image/*" class="block w-full text-gray-700 border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition">Predict</button>
+        </form>
+
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold text-gray-800">Preview:</h2>
+            <div class="relative w-64 h-64 mx-auto overflow-hidden rounded-lg shadow-md">
+                <img id="preview" alt="Image Preview" class="absolute top-0 left-0 w-full h-full object-cover scale-105 hidden">
+            </div>
+        </div>
+
+        <h2 id="result" class="mt-6 text-lg font-medium text-gray-800"></h2>
+        <h2 id="accuracy" class="mt-6 text-lg font-medium text-gray-800"></h2>
+    </div>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const result = document.getElementById('result');
+        const accuracy = document.getElementById('accuracy');
+        const previewImage = document.getElementById('preview');
+        const fileInput = document.getElementById('file');
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    previewImage.src = reader.result;
+                    previewImage.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImage.classList.add('hidden');
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = fileInput.files[0];
+            if (!file) {
+                result.textContent = 'Please upload an image.';
+                accuracy.textContent = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    result.textContent = `Prediction: ${data.prediction}`;
+                    accuracy.textContent = `Accuracy: ${(data.confidence * 100).toFixed(2)}%`;
+                } else {
+                    result.textContent = `Error: ${data.error}`;
+                    accuracy.textContent = '';
+                }
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+                accuracy.textContent = '';  
+            }
+        });
+    </script>
+</body>
+</html>
